@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Flappy Bird</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="ui-panel">
+        <div class="score-box">
+            <div class="score-label">Score</div>
+            <div class="score-value" id="score">0</div>
+        </div>
+        <div class="best-box">
+            <div class="best-label">Best</div>
+            <div class="best-value" id="bestScore">0</div>
+        </div>
+        <div class="controls">
+            <button id="startBtn" class="btn btn-primary">START GAME</button>
+            <button id="pauseBtn" class="btn btn-secondary" disabled>PAUSE</button>
+        </div>
+        <div class="instructions">
+            <p><strong>CONTROLS</strong></p>
+            <p>SPACE or CLICK to fly up</p>
+            <p>Avoid the pipes!</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
