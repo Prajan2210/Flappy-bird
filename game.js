@@ -5,6 +5,7 @@ let gameRunning = false;
 let gamePaused = false;
 let score = 0;
 let bestScore = localStorage.getItem('flappyBird3DBestScore') || 0;
+let flapTime = 0;
 
 // UI Elements
 const scoreDisplay = document.getElementById('score');
@@ -12,9 +13,9 @@ const bestScoreDisplay = document.getElementById('bestScore');
 const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 
-// Game constants
-const GRAVITY = 0.0008;  // FIXED: Changed from negative to positive
-const FLAP_POWER = -0.25; // FIXED: Changed from positive to negative (upward)
+// Game constants - FIXED
+const GRAVITY = 0.0015;      // Bird falls down
+const FLAP_POWER = -0.5;     // Negative = upward velocity
 const PIPE_SPEED = -0.15;
 const PIPE_GAP = 4;
 const PIPE_DISTANCE = 15;
@@ -143,8 +144,7 @@ function createBird() {
     // Set bird properties
     bird.position.x = -20;
     bird.position.y = 0;
-    bird.velocity = { x: 0, y: 0, z: 0 };
-    bird.rotation = { x: 0, y: 0, z: 0 };
+    bird.velocity = { y: 0 };  // Simple vertical velocity
     bird.wings = { left: leftWing, right: rightWing };
 
     scene.add(bird);
@@ -176,7 +176,7 @@ function createBoundaries() {
     ceiling.receiveShadow = true;
     scene.add(ceiling);
 
-    // Side walls (for reference)
+    // Side walls
     const wallGeometry = new THREE.BoxGeometry(2, WORLD_HEIGHT, 100);
     const wallMaterial = new THREE.MeshStandardMaterial({
         color: 0x666666,
@@ -243,12 +243,16 @@ function createPipe() {
 function update() {
     if (!gameRunning || gamePaused) return;
 
-    // Update bird physics
-    bird.velocity.y += GRAVITY; // Bird falls DOWN now
-    bird.velocity.y = Math.min(bird.velocity.y, 0.5); // Terminal velocity
+    // Apply gravity (bird falls DOWN)
+    bird.velocity.y += GRAVITY;
+    
+    // Limit max falling speed
+    bird.velocity.y = Math.min(bird.velocity.y, 0.5);
+    
+    // Apply velocity to position
     bird.position.y += bird.velocity.y;
 
-    // Rotate bird based on velocity
+    // Rotate bird based on velocity (tilts when falling/rising)
     bird.rotation.z = Math.max(-0.5, Math.min(0.5, bird.velocity.y * 0.1));
 
     // Animate wings
@@ -354,6 +358,8 @@ function startGame() {
     scoreDisplay.textContent = score;
     startBtn.disabled = true;
     pauseBtn.disabled = false;
+    
+    console.log('Game started!');
 }
 
 // End game
@@ -367,6 +373,8 @@ function endGame() {
         localStorage.setItem('flappyBird3DBestScore', bestScore);
         bestScoreDisplay.textContent = bestScore;
     }
+    
+    console.log('Game over! Score:', score);
 }
 
 // Pause game
@@ -376,10 +384,11 @@ function pauseGame() {
     pauseBtn.textContent = gamePaused ? 'RESUME' : 'PAUSE';
 }
 
-// Bird flap
+// Bird flap - SIMPLIFIED AND FIXED
 function flap() {
     if (gameRunning && !gamePaused) {
-        bird.velocity.y = FLAP_POWER; // Now goes UP
+        bird.velocity.y = FLAP_POWER; // Set upward velocity immediately
+        console.log('Flap! Velocity:', bird.velocity.y);
     }
 }
 
@@ -390,18 +399,31 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Event listeners
-startBtn.addEventListener('click', startGame);
-pauseBtn.addEventListener('click', pauseGame);
+// Event listeners - ENSURE THEY WORK
+startBtn.addEventListener('click', () => {
+    console.log('Start button clicked');
+    startGame();
+});
 
+pauseBtn.addEventListener('click', () => {
+    console.log('Pause button clicked');
+    pauseGame();
+});
+
+// Spacebar handler
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         e.preventDefault();
+        console.log('Spacebar pressed');
         flap();
     }
 });
 
-window.addEventListener('click', flap);
+// Click handler
+window.addEventListener('click', () => {
+    console.log('Mouse clicked');
+    flap();
+});
 
 // Initialize and start
 initScene();
