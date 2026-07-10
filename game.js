@@ -13,8 +13,8 @@ const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 
 // Game constants
-const GRAVITY = -0.0008;
-const FLAP_POWER = 0.25;
+const GRAVITY = 0.0008;  // FIXED: Changed from negative to positive
+const FLAP_POWER = -0.25; // FIXED: Changed from positive to negative (upward)
 const PIPE_SPEED = -0.15;
 const PIPE_GAP = 4;
 const PIPE_DISTANCE = 15;
@@ -62,25 +62,90 @@ function initScene() {
     bestScoreDisplay.textContent = bestScore;
 }
 
-// Create bird
+// Create bird with wings
 function createBird() {
-    const geometry = new THREE.SphereGeometry(1, 32, 32);
-    const material = new THREE.MeshStandardMaterial({
-        color: 0xf39c12,
-        metalness: 0.3,
+    // Create a group for the bird
+    bird = new THREE.Group();
+    
+    // Body (main sphere)
+    const bodyGeometry = new THREE.SphereGeometry(1.2, 32, 32);
+    const bodyMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffcc00,
+        metalness: 0.1,
         roughness: 0.6,
-        emissive: 0xf39c12,
+        emissive: 0xffaa00,
+        emissiveIntensity: 0.3
+    });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    bird.add(body);
+
+    // Eye
+    const eyeGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+    const eyeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0,
+        roughness: 0.1
+    });
+    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    eye.position.set(0.7, 0.3, 1.1);
+    eye.castShadow = true;
+    bird.add(eye);
+
+    // Pupil
+    const pupilGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+    const pupilMaterial = new THREE.MeshStandardMaterial({
+        color: 0x000000,
+        metalness: 0,
+        roughness: 0
+    });
+    const pupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+    pupil.position.set(0.85, 0.3, 1.2);
+    pupil.castShadow = true;
+    bird.add(pupil);
+
+    // Beak
+    const beakGeometry = new THREE.ConeGeometry(0.3, 0.8, 8);
+    const beakMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff6600,
+        metalness: 0.3,
+        roughness: 0.6
+    });
+    const beak = new THREE.Mesh(beakGeometry, beakMaterial);
+    beak.position.set(1.3, 0, 0);
+    beak.rotation.z = Math.PI / 2;
+    beak.castShadow = true;
+    bird.add(beak);
+
+    // Left Wing
+    const wingGeometry = new THREE.BoxGeometry(0.3, 1.5, 0.8);
+    const wingMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffaa00,
+        metalness: 0.1,
+        roughness: 0.6,
+        emissive: 0xff8800,
         emissiveIntensity: 0.2
     });
-    bird = new THREE.Mesh(geometry, material);
+    const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+    leftWing.position.set(-0.5, 0.3, 0);
+    leftWing.rotation.z = Math.PI / 6;
+    leftWing.castShadow = true;
+    bird.add(leftWing);
+
+    // Right Wing
+    const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+    rightWing.position.set(0.5, 0.3, 0);
+    rightWing.rotation.z = -Math.PI / 6;
+    rightWing.castShadow = true;
+    bird.add(rightWing);
+
+    // Set bird properties
     bird.position.x = -20;
     bird.position.y = 0;
-    bird.castShadow = true;
-    bird.receiveShadow = true;
-
-    // Add physics properties
     bird.velocity = { x: 0, y: 0, z: 0 };
     bird.rotation = { x: 0, y: 0, z: 0 };
+    bird.wings = { left: leftWing, right: rightWing };
 
     scene.add(bird);
 }
@@ -179,12 +244,19 @@ function update() {
     if (!gameRunning || gamePaused) return;
 
     // Update bird physics
-    bird.velocity.y += GRAVITY;
-    bird.velocity.y = Math.max(bird.velocity.y, -0.5); // Terminal velocity
+    bird.velocity.y += GRAVITY; // Bird falls DOWN now
+    bird.velocity.y = Math.min(bird.velocity.y, 0.5); // Terminal velocity
     bird.position.y += bird.velocity.y;
 
     // Rotate bird based on velocity
     bird.rotation.z = Math.max(-0.5, Math.min(0.5, bird.velocity.y * 0.1));
+
+    // Animate wings
+    if (bird.wings) {
+        const wingFlap = Math.sin(Date.now() * 0.01) * 0.3;
+        bird.wings.left.rotation.z = Math.PI / 6 + wingFlap;
+        bird.wings.right.rotation.z = -Math.PI / 6 - wingFlap;
+    }
 
     // Update pipes
     for (let i = pipes.length - 1; i >= 0; i--) {
@@ -219,7 +291,7 @@ function update() {
 
 // Check collisions
 function checkCollisions() {
-    const birdRadius = 1;
+    const birdRadius = 1.5;
 
     // Top and bottom collision
     if (bird.position.y + birdRadius > WORLD_HEIGHT / 2 || bird.position.y - birdRadius < -WORLD_HEIGHT / 2) {
@@ -307,7 +379,7 @@ function pauseGame() {
 // Bird flap
 function flap() {
     if (gameRunning && !gamePaused) {
-        bird.velocity.y = FLAP_POWER;
+        bird.velocity.y = FLAP_POWER; // Now goes UP
     }
 }
 
